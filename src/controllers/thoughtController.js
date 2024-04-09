@@ -1,59 +1,52 @@
-const Thought = require('../models/thought');
+const { Thought } = require('../models/thought');
 
 const thoughtController = {
-  getAllThoughts: async (req, res) => {
+  async getThought(req, res) {
     try {
-      const thoughts = await Thought.find();
+      const thoughts = await Thought.find().populate('user');
       res.json(thoughts);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json(err);
     }
   },
 
-  getThoughtById: async (req, res) => {
+  async getSingleThought(req, res) {
     try {
-      const thought = await Thought.findById(req.params.id);
+      const thought = await Thought.findOne({ _id: req.params.thoughtId }).populate('user');
+
       if (!thought) {
-        return res.status(404).json({ message: 'Thought not found' });
+        return res.status(404).json({ message: 'No thought with that ID' });
       }
+
       res.json(thought);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json(err);
     }
   },
 
-  createThought: async (req, res) => {
+  async createThought(req, res) {
     try {
       const thought = await Thought.create(req.body);
-      res.status(201).json(thought);
+      res.json(thought);
     } catch (err) {
-      res.status(400).json({ error: err.message });
+      console.error(err);
+      return res.status(500).json(err);
     }
   },
 
-  updateThought: async (req, res) => {
+  async deleteThought(req, res) {
     try {
-      const updatedThought = await Thought.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (!updatedThought) {
-        return res.status(404).json({ message: 'Thought not found' });
-      }
-      res.json(updatedThought);
-    } catch (err) {
-      res.status(400).json({ error: err.message });
-    }
-  },
+      const thought = await Thought.findOneAndDelete({ _id: req.params.thoughtId });
 
-  deleteThought: async (req, res) => {
-    try {
-      const deletedThought = await Thought.findByIdAndDelete(req.params.id);
-      if (!deletedThought) {
-        return res.status(404).json({ message: 'Thought not found' });
+      if (!thought) {
+        return res.status(404).json({ message: 'No thought with that ID' });
       }
-      res.json({ message: 'Thought deleted successfully' });
+      res.json({ message: 'Thought deleted!' });
     } catch (err) {
-      res.status(400).json({ error: err.message });
+      res.status(500).json(err);
     }
   }
 };
 
-module.exports = thoughtController;
+
+module.exports = thoughtController

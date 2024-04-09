@@ -1,47 +1,48 @@
-const Thought = require('../models/thought');
+const { Reaction } = require('../models/reaction');
 
 const reactionController = {
-  createReaction: async (req, res) => {
-    const { reactionBody, username } = req.body;
-    const { thoughtId } = req.params;
-
+  async getReaction(req, res) {
     try {
-      const thought = await Thought.findById(thoughtId);
-      if (!thought) {
-        return res.status(404).json({ message: 'Thought not found' });
-      }
-
-      thought.reactions.push({ reactionBody, username });
-      await thought.save();
-
-      res.status(201).json(thought);
+      const reactions = await Reaction.find().populate('user');
+      res.json(reactions); 
     } catch (err) {
-      res.status(400).json({ error: err.message });
+      res.status(500).json(err);
     }
   },
-
-  deleteReaction: async (req, res) => {
-    const { thoughtId, reactionId } = req.params;
-
+  async getSingleReaction(req, res) {
     try {
-      const thought = await Thought.findById(thoughtId);
-      if (!thought) {
-        return res.status(404).json({ message: 'Thought not found' });
-      }
-
-      const reaction = thought.reactions.find(reaction => reaction._id == reactionId);
+      const reaction = await Reaction.findOne({ _id: req.params.reactionId }).populate('thought');
       if (!reaction) {
-        return res.status(404).json({ message: 'Reaction not found' });
+        return res.status(404).json({ message: 'No reaction with that ID' });
       }
 
-      thought.reactions.pull(reactionId);
-      await thought.save();
-
-      res.json({ message: 'Reaction deleted successfully' });
+      res.json(reaction);
     } catch (err) {
-      res.status(400).json({ error: err.message });
+      res.status(500).json(err);
     }
+ },
+ async createReaction(req, res) {
+  try {
+    const reaction = await Reaction.create(req.body);
+    res.json(reaction);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json(err);
   }
+},
+
+async deleteReaction(req, res) {
+  try {
+    const reaction = await Reaction.findOneAndDelete({ _id: req.params.reactionId });
+
+    if (!reaction) {
+      return res.status(404).json({ message: 'No reaction with that ID' });
+    }
+    res.json({ message: 'Reaction deleted!' });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+}
 };
 
 module.exports = reactionController;
